@@ -187,7 +187,33 @@ SELECT new_customer(60, 'firstname', 'lastname', 'company', 'address', 'city', '
 
 -- 6.1 AFTER/FOR
 -- Task - Create an after insert trigger on the employee table fired after a new record is inserted into the table.
+CREATE OR REPLACE FUNCTION employee_insert_triggerd()
+RETURNS TRIGGER AS $$
+BEGIN
+	UPDATE employee SET lastname = 'triggered', firstname = 'triggered' WHERE employeeid = (SELECT MAX(employeeid) FROM employee);
+	return NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER triggered_employee AFTER INSERT ON employee FOR EACH ROW EXECUTE PROCEDURE employee_insert_triggerd();
+
+INSERT INTO employee VALUES (15, 'lastname', 'firstname', 'title', 2, '10-10-2010', '11-11-2011', 'address', 'city', 'state', 'country', 'pcode', '111-111-1111', '222-222-2222', 'email@email.com');
+
 -- Task – Create an after update trigger on the album table that fires after a row is inserted in the table
+CREATE OR REPLACE FUNCTION updated_album_triggered()
+RETURNS TRIGGER AS $$
+DECLARE lastid INTEGER;
+BEGIN
+	SELECT MAX(albumid) INTO lastid FROM album;
+	INSERT INTO album VALUES (lastid+1, 'triggered album title', 1);
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER triggered_album_update AFTER UPDATE ON album FOR EACH ROW EXECUTE PROCEDURE updated_album_triggered();
+
+UPDATE album SET title = 'this set off a trigger' WHERE albumid = 1;
+
 -- Task – Create an after delete trigger on the customer table that fires after a row is deleted from the table.
 
 -- 6.2 INSTEAD OF
@@ -214,6 +240,8 @@ SELECT * FROM album CROSS JOIN artist ORDER BY artist.name ASC;
 
 -- 7.5 SELF
 -- Task – Perform a self-join on the employee table, joining on the reportsto column.
+SELECT e.firstname, e.lastname, m.firstname, m.lastname FROM employee e
+INNER JOIN employee m ON e.reportsto = m.employeeid;
 
 
 
