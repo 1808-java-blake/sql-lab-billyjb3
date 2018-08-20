@@ -107,6 +107,17 @@ SELECT top_dollar();
 
 -- 3.3 User Defined Scalar Functions
 -- Task – Create a function that returns the average price of invoiceline items in the invoiceline table
+CREATE OR REPLACE FUNCTION my_invoiceline_avg()
+RETURNS DECIMAL AS $$
+DECLARE total NUMERIC; icount INTEGER;
+BEGIN
+	SELECT COUNT(*) INTO icount FROM invoiceline;
+	SELECT SUM(unitprice) INTO total FROM invoiceline;
+	return total / icount;
+END;
+$$ LANGUAGE plpgsql;
+
+SELECT my_invoiceline_avg();
 
 -- 3.4 User Defined Table Valued Functions
 -- Task – Create a function that returns all employees who are born after 1968.
@@ -215,6 +226,19 @@ CREATE TRIGGER triggered_album_update AFTER UPDATE ON album FOR EACH ROW EXECUTE
 UPDATE album SET title = 'this set off a trigger' WHERE albumid = 1;
 
 -- Task – Create an after delete trigger on the customer table that fires after a row is deleted from the table.
+CREATE OR REPLACE FUNCTION customer_delete_trigger_function()
+RETURNS TRIGGER AS $$
+DECLARE lastid INTEGER;
+BEGIN
+	SELECT MAX(customerid) INTO lastid FROM customer;
+	INSERT INTO customer VALUES (lastid+1, 'delete', 'trigger', 'worked', 'now', 'im', 'done', 'with', 'this', 'trigger', 'problem', '!!', 1);
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER customer_delete_trigger AFTER DELETE ON customer EXECUTE PROCEDURE customer_delete_trigger_function();
+
+DELETE FROM customer WHERE customerid = 60;
 
 -- 6.2 INSTEAD OF
 -- Task – Create an instead of trigger that restricts the deletion of any invoice that is priced over 50 dollars.
